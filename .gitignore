@@ -1,0 +1,19 @@
+
+# Archivos generados por Maven
+target/
+
+# Resultados generados por el programa
+resultados.txt
+
+# Archivos temporales de Java
+*.class
+*.log
+
+# Configuracion local de editores
+.vscode/
+.idea/
+*.iml
+
+# Archivos temporales del sistema
+.DS_Store
+Thumbs.db
