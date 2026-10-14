@@ -46,6 +46,18 @@ public class SimpsonRuleTest {
                 Logic.calcularProbabilidad(1.1812, 10), 0.00001);
         assertEquals(0.49500,
                 Logic.calcularProbabilidad(2.750, 30), 0.00001);
+        assertEquals(0.35006,
+                Logic.calcularProbabilidad(0, 1.1, 9, 10), 0.00001);
+        assertEquals(0.36757,
+                Logic.calcularProbabilidad(0, 1.1812, 10, 10), 0.00001);
+        assertEquals(0.49500,
+                Logic.calcularProbabilidad(0, 2.750, 30, 10), 0.00001);
+    }
+
+    @Test
+    void testIntervaloPersonalizado() {
+        assertEquals(0.65656,
+                Logic.calcularProbabilidad(-1.0, 1.0, 9, 10), 0.00001);
     }
 
     @Test
@@ -117,6 +129,12 @@ public class SimpsonRuleTest {
                         x -> 2 * x, 0, 4, 0));
         assertThrows(IllegalArgumentException.class,
                 () -> SimpsonIntegration.integrarAdaptativo(
+                        x -> 2 * x, 0, 4, 0.00001, 3));
+        assertThrows(IllegalArgumentException.class,
+                () -> SimpsonIntegration.integrarAdaptativo(
+                        x -> 2 * x, 0, 4, 0.00001, -2));
+        assertThrows(IllegalArgumentException.class,
+                () -> SimpsonIntegration.integrarAdaptativo(
                         x -> 2 * x, 0, 4, Double.NaN));
         assertThrows(ArithmeticException.class,
                 () -> SimpsonIntegration.integrarAdaptativo(
@@ -125,6 +143,19 @@ public class SimpsonRuleTest {
         assertThrows(IllegalStateException.class,
                 () -> SimpsonIntegration.integrarAdaptativo(
                         x -> llamadas[0]++ % 2, 0, 1, 1e-300));
+    }
+
+    @Test
+    void testLogicaIntervaloInvalido() {
+        assertThrows(IllegalArgumentException.class,
+                () -> Logic.calcularProbabilidad(
+                        Double.NaN, 1, 9, 10));
+        assertThrows(IllegalArgumentException.class,
+                () -> Logic.calcularProbabilidad(2, 1, 9, 10));
+        assertThrows(IllegalArgumentException.class,
+                () -> Logic.calcularProbabilidad(0, 1, 9, 0));
+        assertThrows(IllegalArgumentException.class,
+                () -> Logic.calcularProbabilidad(0, 1, 9, 5));
     }
 
     @Test
@@ -141,11 +172,34 @@ public class SimpsonRuleTest {
     }
 
     @Test
-    void testAppUsaCasosPredeterminados(@TempDir Path directorio)
+    void testAppAceptaUnCasoPorParametros(@TempDir Path directorio)
             throws IOException {
         Path archivo = directorio.resolve("resultados.txt");
-        App.main(new String[] {"--output=" + archivo});
-        assertTrue(Files.readString(archivo).contains("Calculado=0.35006"));
+        App.main(new String[] {
+                "1.1", "9", "--output=" + archivo
+        });
+        String contenido = Files.readString(archivo);
+        assertTrue(contenido.contains("a=0.0000 | b=1.1000 | dof=9 | n=10"));
+        assertTrue(contenido.contains("Calculado=0.35006"));
+    }
+
+    @Test
+    void testAppAceptaModalidadAmpliada(
+            @TempDir Path directorio) {
+        Path archivo = directorio.resolve("resultados.txt");
+        App.main(new String[] {
+                "0", "1.1812", "10", "10",
+                "--output=" + archivo
+        });
+        String contenido;
+        try {
+            contenido = Files.readString(archivo);
+        } catch (IOException e) {
+            throw new AssertionError(e);
+        }
+        assertTrue(contenido.contains(
+                "a=0.0000 | b=1.1812 | dof=10 | n=10"));
+        assertTrue(contenido.contains("Calculado=0.36757"));
     }
 
     @Test
@@ -153,20 +207,33 @@ public class SimpsonRuleTest {
             throws IOException {
         Path archivo = directorio.resolve("resultados.txt");
         App.main(new String[] {
-                "0.5", "8", "2.0", "12", "--output=" + archivo
+                "1", "2", "12", "12", "--output=" + archivo
         });
         String contenido = Files.readString(archivo);
-        assertTrue(contenido.contains("x=0.5000 | dof=8"));
-        assertTrue(contenido.contains("x=2.0000 | dof=12"));
+        assertTrue(contenido.contains("a=1.0000 | b=2.0000 | dof=12 | n=12"));
         assertTrue(contenido.contains("Esperado=N/A"));
     }
 
     @Test
     void testAppValidaArgumentos() {
         assertThrows(IllegalArgumentException.class,
+                () -> App.main(new String[] {}));
+        assertThrows(IllegalArgumentException.class,
                 () -> App.main(new String[] {"1.0"}));
         assertThrows(IllegalArgumentException.class,
                 () -> App.main(new String[] {"abc", "9"}));
+        assertThrows(IllegalArgumentException.class,
+                () -> App.main(new String[] {"1.0", "9", "2.0"}));
+        assertThrows(IllegalArgumentException.class,
+                () -> App.main(new String[] {"0", "1", "9", "impar"}));
+        assertThrows(IllegalArgumentException.class,
+                () -> App.main(new String[] {"0", "1", "9", "5"}));
+        assertThrows(IllegalArgumentException.class,
+                () -> App.main(new String[] {"2", "1", "9", "10"}));
+        assertThrows(IllegalArgumentException.class,
+                () -> App.main(new String[] {
+                        "0", "1", "9", "10", "extra"
+                }));
         assertThrows(IllegalArgumentException.class,
                 () -> App.main(new String[] {"1.0", "9", "--output="}));
         assertThrows(IllegalArgumentException.class,
@@ -175,7 +242,9 @@ public class SimpsonRuleTest {
 
     @Test
     void testAppManejaErrorDeSalida(@TempDir Path directorio) {
-        App.main(new String[] {"1.0", "9", "--output=" + directorio});
+        App.main(new String[] {
+                "1.0", "9", "--output=" + directorio
+        });
     }
 
     @Test

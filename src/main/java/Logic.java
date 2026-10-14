@@ -31,9 +31,15 @@ public class Logic {
     public static double calcularProbabilidad(
             double x, int gradosLibertad) {
 
-        if (!Double.isFinite(x) || x < 0) {
+        return calcularProbabilidad(0.0, x, gradosLibertad, 10);
+    }
+
+    public static double calcularProbabilidad(
+            double a, double b, int gradosLibertad, int segmentosIniciales) {
+
+        if (!Double.isFinite(a) || !Double.isFinite(b) || b < a) {
             throw new IllegalArgumentException(
-                    "x debe ser no negativo y finito");
+                    "Los limites deben ser finitos y b debe ser mayor o igual que a");
         }
 
         if (gradosLibertad <= 0) {
@@ -41,11 +47,14 @@ public class Logic {
                     "Grados de libertad no validos");
         }
 
+        if (segmentosIniciales <= 0 || segmentosIniciales % 2 != 0) {
+            throw new IllegalArgumentException(
+                    "Los segmentos deben ser positivos y pares");
+        }
+
         return SimpsonIntegration.integrarAdaptativo(
                 t -> densidad(t, gradosLibertad),
-                0.0,
-                x,
-                0.00001
+                a, b, 0.00001, segmentosIniciales
         );
     }
 }

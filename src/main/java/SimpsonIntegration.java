@@ -45,13 +45,28 @@ public class SimpsonIntegration {
             double b,
             double tolerancia) {
 
+        return integrarAdaptativo(funcion, a, b, tolerancia, 10);
+    }
+
+    public static double integrarAdaptativo(
+            DoubleUnaryOperator funcion,
+            double a,
+            double b,
+            double tolerancia,
+            int segmentosIniciales) {
+
         if (!Double.isFinite(tolerancia)
                 || tolerancia <= 0) {
             throw new IllegalArgumentException(
                     "Tolerancia no valida");
         }
 
-        int segmentos = 10;
+        if (segmentosIniciales <= 0 || segmentosIniciales % 2 != 0) {
+            throw new IllegalArgumentException(
+                    "Los segmentos deben ser positivos y pares");
+        }
+
+        int segmentos = segmentosIniciales;
         double anterior = integrar(
                 funcion, a, b, segmentos);
 
