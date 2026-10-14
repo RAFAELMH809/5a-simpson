@@ -1,12 +1,12 @@
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Locale;
+import java.util.List;
+import java.util.ArrayList;
 
 public class App {
 
     public static void main(String[] args) {
-        List<Caso> casos = obtenerCasos(args);
+        Caso caso = obtenerCaso(args);
         String archivoSalida = obtenerArchivoSalida(args);
 
         StringBuilder reporte = new StringBuilder();
@@ -14,21 +14,19 @@ public class App {
         reporte.append("ACTIVIDAD 5A - SIMPSON RULE\n");
         reporte.append("Distribucion t de Student\n\n");
 
-        for (Caso caso : casos) {
-            double resultado = Logic.calcularProbabilidad(
-                    caso.x(), caso.gradosLibertad());
-            String esperado = caso.esperado() == null
-                    ? "N/A" : String.format(Locale.US, "%.5f",
-                    caso.esperado());
-            String linea = String.format(
-                    Locale.US,
-                    "x=%.4f | dof=%d | Esperado=%s"
-                            + " | Calculado=%.5f%n",
-                    caso.x(), caso.gradosLibertad(), esperado, resultado);
+        double resultado = Logic.calcularProbabilidad(
+                caso.a(), caso.b(), caso.gradosLibertad(),
+                caso.segmentosIniciales());
+        String esperado = "N/A";
+        String linea = String.format(
+                Locale.US,
+                "a=%.4f | b=%.4f | dof=%d | n=%d"
+                        + " | Esperado=%s | Calculado=%.5f%n",
+                caso.a(), caso.b(), caso.gradosLibertad(),
+                caso.segmentosIniciales(), esperado, resultado);
 
-            System.out.print(linea);
-            reporte.append(linea);
-        }
+        System.out.print(linea);
+        reporte.append(linea);
 
         try {
             Output.guardar(
@@ -44,7 +42,7 @@ public class App {
         }
     }
 
-    private static List<Caso> obtenerCasos(String[] args) {
+    private static Caso obtenerCaso(String[] args) {
         List<String> valores = new ArrayList<>();
         for (String argumento : args) {
             if (!argumento.startsWith("--output=")) {
@@ -52,30 +50,28 @@ public class App {
             }
         }
 
-        if (valores.isEmpty()) {
-            return List.of(
-                    new Caso(1.1, 9, 0.35006),
-                    new Caso(1.1812, 10, 0.36757),
-                    new Caso(2.750, 30, 0.49500));
-        }
-
-        if (valores.size() % 2 != 0) {
+        if (valores.size() != 2 && valores.size() != 4) {
             throw new IllegalArgumentException(
-                    "Las entradas deben venir en pares: x gradosLibertad");
+                    "Debes proporcionar 2 parametros (x dof) o 4 "
+                            + "(a b dof n)");
         }
 
-        List<Caso> casos = new ArrayList<>();
-        for (int i = 0; i < valores.size(); i += 2) {
-            try {
-                double x = Double.parseDouble(valores.get(i));
-                int grados = Integer.parseInt(valores.get(i + 1));
-                casos.add(new Caso(x, grados, null));
-            } catch (NumberFormatException e) {
-                throw new IllegalArgumentException(
-                        "Cada entrada debe ser numerica: x gradosLibertad", e);
+        try {
+            if (valores.size() == 2) {
+                double x = Double.parseDouble(valores.get(0));
+                int grados = Integer.parseInt(valores.get(1));
+                return new Caso(0.0, x, grados, 10);
             }
+
+            double a = Double.parseDouble(valores.get(0));
+            double b = Double.parseDouble(valores.get(1));
+            int grados = Integer.parseInt(valores.get(2));
+            int segmentos = Integer.parseInt(valores.get(3));
+            return new Caso(a, b, grados, segmentos);
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException(
+                    "Los parametros deben tener tipos numericos validos", e);
         }
-        return casos;
     }
 
     private static String obtenerArchivoSalida(String[] args) {
@@ -92,6 +88,10 @@ public class App {
         return archivo;
     }
 
-    private record Caso(double x, int gradosLibertad, Double esperado) {
+    private record Caso(
+            double a,
+            double b,
+            int gradosLibertad,
+            int segmentosIniciales) {
     }
 }
