@@ -13,7 +13,7 @@ public class GammaFunction {
     }
 
     private static double calcularGammaEntero(int entero) {
-        return calcularFactorial(entero - 1);
+        return calcularFactorial(entero);
     }
 
     private static double calcularGammaSemientero(int indice) {
