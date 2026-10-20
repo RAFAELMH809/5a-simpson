@@ -3,7 +3,7 @@ name: Java Maven CI - Simpson Rule
 on:
   push:
     branches:
-      - master
+      - '**'
   pull_request:
     branches:
       - master
